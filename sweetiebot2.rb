@@ -1,11 +1,11 @@
 version="beta1.17"
 puts "Cutie Mark Acquisition Program version "+version+" starting..."
-require 'rubygems'
+require "rubygems"
 require "cinch"
 require "open-uri"
 require "nokogiri"
 require "cgi"
-
+require "sqlite3"
 
 bot = Cinch::Bot.new do
   configure do |c|
@@ -39,11 +39,13 @@ bot = Cinch::Bot.new do
   on :message, /^,jargon *(.+) */ do |m, query|
     begin
       db = SQLite3::Database.open "jargon.db"
-      stm = db.prepare "SELECT def FROM terms WHERE term like '#{query}'"
-
-      rs = stm.execute
-      rs.each do |row|
-        m.reply row[0]
+      ret = db.execute "SELECT id, term, def FROM terms WHERE term like '#{query}'"
+      ret.each do |term|
+        ret = db.execute "SELECT name from abbrev WHERE term = #{term[0]}"
+        puts term[1] + ' (' + ret.map{|row|
+          row[0]
+        }.join(', ') + ')'
+        puts term[2]
       end
     rescue SQLite3::Exception => e
       puts "Exception occured"
