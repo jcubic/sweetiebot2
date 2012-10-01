@@ -6,6 +6,7 @@ require "open-uri"
 require "nokogiri"
 require "cgi"
 
+
 bot = Cinch::Bot.new do
   configure do |c|
     c.server = "ircserver"
@@ -18,21 +19,39 @@ bot = Cinch::Bot.new do
   end
 
   helpers do
- 	 def google(query)
- 	url = "http://www.google.com/search?q=#{CGI.escape(query)}"
-      	res = Nokogiri::HTML(open(url)).at("h3.r")
-	title = res.text
-      	link = res.at('a')[:href]
-      	desc = res.at("./following::div").children.first.text
+    def google(query)
+      url = "http://www.google.com/search?q=#{CGI.escape(query)}"
+      res = Nokogiri::HTML(open(url)).at("h3.r")
+      title = res.text
+      link = res.at('a')[:href]
+      desc = res.at("./following::div").children.first.text
     rescue
-    	"No results found"
+      "No results found"
     else
-      	CGI.unescape_html "#{title} - #{desc} (#{link})"
+      CGI.unescape_html "#{title} - #{desc} (#{link})"
     end
-	 end
-on :message, /^,g (.+)/ do |m, query|
-	m.reply google(query) 
-end
+  end
+
+  on :message, /^,g (.+)/ do |m, query|
+	m.reply google(query)
+  end
+
+  on :message, /^,jargon *(.+) */ do |m, query|
+    begin
+      db = SQLite3::Database.open "jargon.db"
+      stm = db.prepare "SELECT def FROM terms WHERE term like '#{query}'"
+
+      rs = stm.execute
+      rs.each do |row|
+        m.reply row[0]
+      end
+    rescue SQLite3::Exception => e
+      puts "Exception occured"
+      puts e
+    ensure
+      db.close if db
+    end
+  end
 
 end
 bot.start
