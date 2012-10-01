@@ -42,10 +42,9 @@ bot = Cinch::Bot.new do
       ret = db.execute "SELECT id, term, def FROM terms WHERE term like '#{query}'"
       ret.each do |term|
         ret = db.execute "SELECT name from abbrev WHERE term = #{term[0]}"
-        puts term[1] + ' (' + ret.map{|row|
+        m.reply term[1] + ' (' + ret.map{|row|
           row[0]
-        }.join(', ') + ')'
-        puts term[2]
+        }.join(', ') + ')' + '\n' + term[2]
       end
     rescue SQLite3::Exception => e
       puts "Exception occured"
